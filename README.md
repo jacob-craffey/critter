@@ -1,6 +1,6 @@
-# Crittr - Your Digital Wildlife Journal 📸
+# Critter - Your Digital Wildlife Journal 📸
 
-Inspired by Pokemon Snap, Crittr is a modern web application that lets you document and collect wildlife encounters during your real-world adventures. Think of it as your digital field journal for nature photography and wildlife spotting.
+Inspired by Pokemon Snap, Critter is a modern web application that lets you document and collect wildlife encounters during your real-world adventures. Think of it as your digital field journal for nature photography and wildlife spotting.
 
 ## Features 🌟
 
@@ -24,8 +24,8 @@ Inspired by Pokemon Snap, Crittr is a modern web application that lets you docum
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/crittr.git
-cd crittr
+git clone https://github.com/jacob-craffey/critter.git
+cd critter
 ```
 
 2. Install dependencies:
