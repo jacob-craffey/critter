@@ -26,3 +26,47 @@ Inspired by Pokemon Snap, Crittr is a modern web application that lets you docum
 ```bash
 git clone https://github.com/yourusername/crittr.git
 cd crittr
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up PocketBase:
+    - Download and install PocketBase
+    - Create collections for users and critters
+    - Configure OAuth providers if desired
+4. Create a .env file with your configuration:
+```
+VITE_POCKETBASE_URL=http://127.0.0.1:8090
+```
+5. Start the development server:
+```bash
+npm run dev
+```
+
+## Collection Schema 📝
+### Critters
+- species_name (required): Scientific or common name
+- nick_name (optional): Personal nickname for the critter
+- date_spotted: Date of encounter
+- photo: Image file
+- notes: Additional observations
+- latitude: GPS coordinate
+- longitude: GPS coordinate
+- user_id: Reference to user who logged the critter
+
+
+## Contributing 🤝
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License 📄
+This project is licensed under the ISC License.
+
+## Acknowledgments 🙏
+- Inspired by Nintendo's Pokemon Snap
+- OpenStreetMap for mapping functionality
+- PocketBase for backend services
+-  All contributors and users of the application
