@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardBody,
@@ -6,14 +6,23 @@ import {
   Divider,
   Heading,
   useColorModeValue,
+  Alert,
+  AlertIcon,
+  AlertDescription,
+  Collapse,
 } from "@chakra-ui/react";
 import { EmailPasswordAuth } from "./EmailPasswordAuth";
 import { OAuthButtons } from "./OAuthButtons";
 
 function SignIn() {
+  const [error, setError] = useState<string | null>(null);
   const bgColor = useColorModeValue("white", "darkGreen.800");
   const borderColor = useColorModeValue("sage.200", "sage.600");
   const headingColor = useColorModeValue("darkGreen.800", "cream.50");
+
+  const handleAuthError = (message: string) => {
+    setError(message);
+  };
 
   return (
     <Card
@@ -25,13 +34,14 @@ function SignIn() {
       borderWidth="1px"
       boxShadow="lg"
     >
-      <CardHeader display="flex" justifyContent="center">
-        <Heading size="lg" fontFamily="'Kalam', cursive" color={headingColor}>
-          Welcome to Critter
-        </Heading>
-      </CardHeader>
       <CardBody>
-        <EmailPasswordAuth />
+        <Collapse in={!!error} animateOpacity>
+          <Alert status="error" mb={4} borderRadius="md">
+            <AlertIcon />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </Collapse>
+        <EmailPasswordAuth onError={handleAuthError} />
         <Divider my={4} borderColor={borderColor} />
         <OAuthButtons />
       </CardBody>

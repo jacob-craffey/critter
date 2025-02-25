@@ -13,22 +13,36 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { authService } from "@/services/AuthService";
+import { pb } from "@/services/pocketbase";
+import { ClientResponseError } from "pocketbase";
 
-export const EmailPasswordAuth = () => {
+interface EmailPasswordAuthProps {
+  onError: (message: string) => void;
+}
+
+export const EmailPasswordAuth: React.FC<EmailPasswordAuthProps> = ({
+  onError,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const toast = useToast();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    const formData = new FormData(e.currentTarget);
 
     try {
-      await authService.signIn({
-        email: formData.get("email") as string,
-        password: formData.get("password") as string,
-      });
+      await pb.collection("users").authWithPassword(email, password);
+      await authService.signIn({ email, password });
     } catch (error) {
+      if (error instanceof ClientResponseError) {
+        if (error.status === 400) {
+          onError("Invalid email or password");
+        } else {
+          onError("An error occurred while signing in");
+        }
+      }
       toast({
         title: "Error",
         description:
@@ -87,11 +101,21 @@ export const EmailPasswordAuth = () => {
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>
-                <Input name="email" type="email" />
+                <Input
+                  name="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </FormControl>
               <FormControl isRequired>
                 <FormLabel>Password</FormLabel>
-                <Input name="password" type="password" />
+                <Input
+                  name="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </FormControl>
               <Button
                 type="submit"
