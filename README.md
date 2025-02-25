@@ -1,8 +1,28 @@
-# React + Vite
+# Crittr - Your Digital Wildlife Journal 📸
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Inspired by Pokemon Snap, Crittr is a modern web application that lets you document and collect wildlife encounters during your real-world adventures. Think of it as your digital field journal for nature photography and wildlife spotting.
 
-Currently, two official plugins are available:
+## Features 🌟
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Photo-Centric Documentation**: Capture and upload photos of wildlife you encounter
+- **Location Tracking**: Automatically extracts GPS coordinates from photo metadata or allows manual location pinning
+- **Rich Details**: Record species names, nicknames, dates spotted, and field notes
+- **Interactive Map View**: View where you encountered each critter using OpenStreetMap integration
+- **Collection Management**: Build and manage your personal wildlife collection
+- **Secure Authentication**: Support for email/password and OAuth login options
+
+## Technology Stack 🛠️
+
+- **Frontend**: React with TypeScript
+- **UI Framework**: Chakra UI
+- **Map Integration**: Leaflet with React-Leaflet
+- **Backend**: PocketBase
+- **Image Processing**: ExifReader for metadata extraction
+- **Build Tool**: Vite
+
+## Getting Started 🚀
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/crittr.git
+cd crittr
