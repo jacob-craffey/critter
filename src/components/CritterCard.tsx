@@ -15,6 +15,7 @@ import {
   useToast,
   Center,
   Box,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import React, { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -28,6 +29,7 @@ import CritterForm from "./CritterForm";
 import { critterService } from "@/services/CritterService";
 import { AlertDialog } from "./AlertDialog";
 import { pb } from "@/services/pocketbase";
+import CritterDetail from "./CritterDetail";
 
 interface CritterCardProps {
   critter: Critter;
@@ -38,6 +40,7 @@ interface CritterCardProps {
 function CritterCard({ critter, onDelete, onUpdate }: CritterCardProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const toast = useToast();
 
@@ -70,21 +73,31 @@ function CritterCard({ critter, onDelete, onUpdate }: CritterCardProps) {
     return pb.files.getURL(record, record.photo, { thumb: "260x0" });
   };
 
+  const handleMenuClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const bgColor = useColorModeValue("white", "darkGreen.800");
+  const borderColor = useColorModeValue("sage.200", "sage.600");
+  const textColor = useColorModeValue("darkGreen.800", "cream.50");
+
   return (
     <>
       <Card
         key={critter.id}
         w="300px"
-        bg="white"
-        boxShadow="2xl"
-        filter="drop-shadow(0 5px 5px rgba(0,0,0,0.15))"
-        borderRadius="sm"
+        bg={bgColor}
+        borderColor={borderColor}
+        borderWidth="1px"
+        boxShadow="lg"
+        borderRadius="md"
+        overflow="hidden"
+        onClick={() => setIsDetailOpen(true)}
+        cursor="pointer"
         _hover={{
-          transform: "rotate(1deg)",
+          transform: "translateY(-4px)",
           transition: "transform 0.2s",
         }}
-        position="relative"
-        p={3}
       >
         <CardBody p={0}>
           <Menu>
@@ -98,6 +111,7 @@ function CritterCard({ critter, onDelete, onUpdate }: CritterCardProps) {
               zIndex={2}
               bg="white"
               _hover={{ opacity: 1 }}
+              onClick={handleMenuClick}
             >
               <Box
                 transform="rotate(45deg) perspective(100px) rotateX(30deg)"
@@ -110,15 +124,26 @@ function CritterCard({ critter, onDelete, onUpdate }: CritterCardProps) {
                 />
               </Box>
             </MenuButton>
-            <MenuList minW="fit-content">
-              <MenuItem onClick={onOpen}>
+            <MenuList minW="fit-content" onClick={handleMenuClick}>
+              <MenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen();
+                }}
+              >
                 <FontAwesomeIcon
                   icon={faPencil}
                   style={{ marginRight: "10px" }}
                 />
                 Edit
               </MenuItem>
-              <MenuItem color="red.500" onClick={() => setIsAlertOpen(true)}>
+              <MenuItem
+                color="red.500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAlertOpen(true);
+                }}
+              >
                 <FontAwesomeIcon
                   icon={faTrash}
                   style={{ marginRight: "10px" }}
@@ -152,33 +177,35 @@ function CritterCard({ critter, onDelete, onUpdate }: CritterCardProps) {
           <VStack
             spacing={1}
             align="start"
-            px={2}
-            pb={2}
-            fontFamily="'Kalam', cursive" // Add this font to your project
+            px={4}
+            pb={4}
+            fontFamily="'Kalam', cursive"
           >
-            <Heading size="md" fontFamily="inherit" color="gray.700">
-              {critter.nick_name ? (
-                <>
-                  {critter.nick_name}
-                  <Text fontSize="sm" color="gray.500" mt={0}>
-                    {critter.species_name}
-                  </Text>
-                </>
-              ) : (
-                critter.species_name
-              )}
+            <Heading size="md" fontFamily="inherit" color={textColor}>
+              {critter.nick_name || critter.species_name}
             </Heading>
-            <Text fontSize="sm" color="gray.600" fontStyle="italic">
+            {critter.nick_name && (
+              <Text fontSize="sm" color="sage.500">
+                {critter.species_name}
+              </Text>
+            )}
+            <Text fontSize="sm" color="sage.400">
               {new Date(critter.date_spotted).toLocaleDateString()}
             </Text>
             {critter.notes && (
-              <Text noOfLines={2} fontSize="sm" color="gray.600">
+              <Text noOfLines={2} fontSize="sm" color="sage.500">
                 {critter.notes}
               </Text>
             )}
           </VStack>
         </CardBody>
       </Card>
+
+      <CritterDetail
+        critter={critter}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
 
       <CritterForm
         critter={critter}

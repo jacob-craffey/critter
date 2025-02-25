@@ -34,13 +34,13 @@ export const OAuthButtons = () => {
           Continue with Google
         </Button>
 
-        <Button
+        {/* <Button
           onClick={() => handleOAuthLogin("apple")}
           variant="outline"
           w={"full"}
         >
           Continue with Apple
-        </Button>
+        </Button> */}
       </VStack>
     </Box>
   );

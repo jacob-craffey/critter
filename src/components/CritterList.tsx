@@ -8,16 +8,19 @@ import {
   SlideFade,
   Spinner,
   useDisclosure,
+  IconButton,
 } from "@chakra-ui/react";
-import CritterForm from "./CritterForm";
-import CritterCard from "./CritterCard";
-import { critterService } from "@/services/CritterService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
+  faMap,
+  faThLarge,
 } from "@fortawesome/free-solid-svg-icons";
-
+import CritterForm from "./CritterForm";
+import CritterCard from "./CritterCard";
+import MapListView from "./MapListView";
+import { critterService } from "@/services/CritterService";
 import { Critter } from "@/models/types";
 import { ClientResponseError } from "pocketbase";
 
@@ -27,6 +30,7 @@ export const CritterList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [viewMode, setViewMode] = useState<"cards" | "map">("cards");
 
   const perPage = 10;
 
@@ -85,41 +89,61 @@ export const CritterList: React.FC = () => {
   }
 
   return (
-    <Box p={4}>
-      <SimpleGrid
-        columns={{ base: 1, md: 2, lg: 3 }}
-        spacing={6}
-        justifyItems="center"
-        maxW="1200px"
-        mx="auto"
-      >
-        {critters.map((critter) => (
-          <SlideFade in={!loading} offsetY="40px" key={critter.id}>
-            <CritterCard
-              critter={critter}
-              onDelete={handleDeleteCritter}
-              onUpdate={handleAddOrUpdateCritter}
-            />
-          </SlideFade>
-        ))}
-      </SimpleGrid>
-      <Flex justifyContent="end" mt={6} gap={6}>
-        <Button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          isDisabled={page === 1}
-        >
-          <FontAwesomeIcon icon={faChevronLeft} />
-        </Button>
-        <Button
-          onClick={() => setPage((p) => p + 1)}
-          isDisabled={page >= totalPages}
-        >
-          <FontAwesomeIcon icon={faChevronRight} />
-        </Button>
+    <Box>
+      <Flex justifyContent="space-between" p={4}>
+        <Flex gap={2}>
+          <IconButton
+            aria-label="Toggle view"
+            icon={
+              <FontAwesomeIcon
+                icon={viewMode === "cards" ? faMap : faThLarge}
+              />
+            }
+            onClick={() => setViewMode(viewMode === "cards" ? "map" : "cards")}
+          />
+        </Flex>
         <Button onClick={onOpen} colorScheme="blue">
           Add New Critter
         </Button>
       </Flex>
+
+      {viewMode === "cards" ? (
+        <>
+          <SimpleGrid
+            columns={{ base: 1, md: 2, lg: 3 }}
+            spacing={6}
+            justifyItems="center"
+            maxW="1200px"
+            mx="auto"
+          >
+            {critters.map((critter) => (
+              <SlideFade in={!loading} offsetY="40px" key={critter.id}>
+                <CritterCard
+                  critter={critter}
+                  onDelete={handleDeleteCritter}
+                  onUpdate={handleAddOrUpdateCritter}
+                />
+              </SlideFade>
+            ))}
+          </SimpleGrid>
+          <Flex justifyContent="center" mt={6} gap={6}>
+            <Button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              isDisabled={page === 1}
+            >
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </Button>
+            <Button
+              onClick={() => setPage((p) => p + 1)}
+              isDisabled={page >= totalPages}
+            >
+              <FontAwesomeIcon icon={faChevronRight} />
+            </Button>
+          </Flex>
+        </>
+      ) : (
+        <MapListView critters={critters} />
+      )}
 
       <CritterForm
         isOpen={isOpen}

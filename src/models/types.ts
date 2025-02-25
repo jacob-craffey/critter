@@ -14,6 +14,8 @@ export interface Critter extends BaseModel {
   notes: string;
   user_id: string;
   nick_name: string;
+  latitude: string;
+  longitude: string;
 }
 export interface BaseModel {
   id?: string;
