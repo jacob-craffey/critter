@@ -37,8 +37,7 @@ const SignIn = () => {
           textAlign="center"
           mb={4}
         >
-          Your personal wildlife journal for documenting and sharing nature
-          encounters
+          Your personal wildlife journal for documenting nature encounters
         </Text>
         <SignInCard />
       </VStack>
