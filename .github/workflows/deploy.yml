@@ -1,0 +1,36 @@
+name: Deploy to GCP VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo -e "Host vm\n\tHostName ${{ secrets.VM_HOST }}\n\tUser ${{ secrets.VM_USERNAME }}\n\tIdentityFile ~/.ssh/deploy_key\n\tStrictHostKeyChecking no" > ~/.ssh/config
+
+      - name: Deploy to VM
+        run: |
+          rsync -avz --delete dist/ vm:${{ secrets.DEPLOY_PATH }}
