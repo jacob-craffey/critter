@@ -29,12 +29,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo -e "Host vm\n\tHostName ${{ secrets.VM_HOST }}\n\tUser ${{ secrets.VM_USERNAME }}\n\tIdentityFile ~/.ssh/deploy_key\n\tStrictHostKeyChecking no" > ~/.ssh/config
-      
-      - name: Debug SSH
-        run: |
-          ssh -vvv -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "ls -la"
-    
+          
+          # Create known_hosts file and add the VM's key
+          touch ~/.ssh/known_hosts
+          ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+          
+          # Create SSH config
+          echo -e "Host vm\n\tHostName ${{ secrets.VM_HOST }}\n\tUser ${{ secrets.VM_USERNAME }}\n\tIdentityFile ~/.ssh/deploy_key\n\tStrictHostKeyChecking accept-new" > ~/.ssh/config
+          
+      - name: Test SSH connection
+        run: ssh vm "echo Connection successful"
+  
       - name: Deploy to VM
-        run: |
-          rsync -avz --delete dist/ vm:${{ secrets.DEPLOY_PATH }}
+        run: rsync -avz --delete dist/ vm:${{ secrets.DEPLOY_PATH }}
