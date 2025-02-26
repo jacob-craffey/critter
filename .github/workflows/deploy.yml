@@ -30,7 +30,11 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           echo -e "Host vm\n\tHostName ${{ secrets.VM_HOST }}\n\tUser ${{ secrets.VM_USERNAME }}\n\tIdentityFile ~/.ssh/deploy_key\n\tStrictHostKeyChecking no" > ~/.ssh/config
-
+      
+      - name: Debug SSH
+        run: |
+          ssh -vvv -i ~/.ssh/deploy_key ${{ secrets.VM_USERNAME }}@${{ secrets.VM_HOST }} "ls -la"
+    
       - name: Deploy to VM
         run: |
           rsync -avz --delete dist/ vm:${{ secrets.DEPLOY_PATH }}
