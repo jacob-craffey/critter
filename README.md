@@ -69,4 +69,4 @@ This project is licensed under the ISC License.
 - Inspired by Nintendo's Pokemon Snap
 - OpenStreetMap for mapping functionality
 - PocketBase for backend services
--  All contributors and users of the application
+-  All contributors and users of the application 
