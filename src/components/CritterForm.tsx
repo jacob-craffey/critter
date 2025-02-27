@@ -47,8 +47,6 @@ const CritterForm: React.FC<CritterFormProps> = ({
     date_spotted: "",
     photo: "",
     notes: "",
-    latitude: "",
-    longitude: "",
   });
 
   const handleImageSelect = (file: File) => {
