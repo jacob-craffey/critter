@@ -15,30 +15,32 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build project
         run: npm run build
+        env:
+          VITE_POCKETBASE_URL: ${{ vars.VITE_POCKETBASE_URL }}
 
       - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          
+
           # Create known_hosts file and add the VM's key
           touch ~/.ssh/known_hosts
           ssh-keyscan ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
-          
+
           # Create SSH config
           echo -e "Host vm\n\tHostName ${{ secrets.VM_HOST }}\n\tUser ${{ secrets.VM_USERNAME }}\n\tIdentityFile ~/.ssh/deploy_key\n\tStrictHostKeyChecking accept-new" > ~/.ssh/config
-          
+
       - name: Test SSH connection
         run: ssh vm "echo Connection successful"
-  
+
       - name: Deploy to VM
         run: rsync -avz --delete dist/ vm:${{ secrets.DEPLOY_PATH }}

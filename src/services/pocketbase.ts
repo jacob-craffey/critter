@@ -1,3 +1,4 @@
 import PocketBase from "pocketbase";
 
-export const pb = new PocketBase("https://critter.jcraffey.dev/api");
+const pocketbaseUrl = import.meta.env.VITE_POCKETBASE_URL;
+export const pb = new PocketBase(pocketbaseUrl);
