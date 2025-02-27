@@ -20,32 +20,30 @@ interface MapViewProps {
 }
 
 // This component handles map updates
-const MapUpdater: React.FC<MapViewProps> = ({ lat, lng }) => {
+const MapUpdater = ({ lat, lng }: MapViewProps) => {
   const map = useMap();
 
   useEffect(() => {
-    map.setView([lat, lng], map.getZoom());
+    map.setView([lat, lng]);
   }, [lat, lng, map]);
 
   return null;
 };
 
 const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
-  const adjustedLng = lng < 0 ? lng : -lng;
-
   return (
     <Box height="200px" width="100%" borderRadius="md" overflow="hidden">
       <MapContainer
-        center={[lat, adjustedLng]}
+        center={[lat, lng]}
         zoom={13}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
-        <MapUpdater lat={lat} lng={adjustedLng} />
+        <MapUpdater lat={lat} lng={lng} />
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[lat, adjustedLng]} icon={icon}>
+        <Marker position={[lat, lng]} icon={icon}>
           <Popup>
-            Location: {lat.toFixed(6)}, {adjustedLng.toFixed(6)}
+            Location: {lat.toFixed(6)}, {lng.toFixed(6)}
           </Popup>
         </Marker>
       </MapContainer>

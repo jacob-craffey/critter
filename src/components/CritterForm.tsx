@@ -43,10 +43,12 @@ const CritterForm: React.FC<CritterFormProps> = ({
 
   const [formData, setFormData] = useState<Omit<Critter, "user_id">>({
     species_name: "",
-    nick_name: "", // Add this line
+    nick_name: "",
     date_spotted: "",
     photo: "",
     notes: "",
+    latitude: "",
+    longitude: "",
   });
 
   const handleImageSelect = (file: File) => {
