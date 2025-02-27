@@ -13,6 +13,7 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
+  Flex,
 } from "@chakra-ui/react";
 import { critterService } from "@/services/CritterService";
 import { Critter } from "@/models/types";
@@ -210,39 +211,95 @@ const CritterForm: React.FC<CritterFormProps> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>
-            {critter ? "Edit Critter" : "Add New Critter"}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent borderRadius="lg" overflow="hidden">
+          <ModalHeader
+            fontFamily="'Kalam', cursive"
+            fontSize="xl"
+            color="darkGreen.800"
+            borderBottom="1px"
+            borderColor="sage.200"
+            p={4}
+            height="64px"
+          >
+            <Flex
+              height="100%"
+              alignItems="center"
+              position="relative"
+              px={8}
+              mt={"3px"}
+            >
+              <span style={{ marginTop: "3px" }}>
+                {critter ? "Edit Critter" : "Add New Critter"}
+              </span>
+              <ModalCloseButton
+                position="absolute"
+                right={8}
+                top="50%"
+                transform="translateY(-50%)"
+              />
+            </Flex>
           </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+          <ModalBody bg="white" p={8}>
             <form onSubmit={handleSubmit}>
-              <VStack spacing={4}>
+              <VStack spacing={6} align="stretch">
                 <FormControl isRequired>
-                  <FormLabel htmlFor="species_name">Species Name</FormLabel>
+                  <FormLabel
+                    htmlFor="species_name"
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Species Name
+                  </FormLabel>
                   <Input
                     id="species_name"
                     name="species_name"
                     value={formData.species_name}
                     onChange={handleChange}
+                    bg="cream.50"
+                    borderColor="sage.200"
+                    _hover={{ borderColor: "sage.300" }}
+                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
+                    placeholder="Enter the species name"
+                    fontSize="md"
+                    height="44px"
                   />
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel htmlFor="nick_name">Nickname</FormLabel>
+                  <FormLabel
+                    htmlFor="nick_name"
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Nickname (Optional)
+                  </FormLabel>
                   <Input
                     id="nick_name"
                     name="nick_name"
                     value={formData.nick_name || ""}
                     onChange={handleChange}
-                    placeholder="Optional nickname for this critter"
+                    placeholder="Give your critter a friendly nickname"
+                    bg="cream.50"
+                    borderColor="sage.200"
+                    _hover={{ borderColor: "sage.300" }}
+                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
+                    fontSize="md"
+                    height="44px"
                   />
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel>Photo</FormLabel>
+                  <FormLabel
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Photo
+                  </FormLabel>
                   <ImageDropzone
                     onImageSelect={handleImageSelect}
                     onMetadataExtracted={handleMetadataExtracted}
@@ -251,33 +308,66 @@ const CritterForm: React.FC<CritterFormProps> = ({
                 </FormControl>
 
                 <FormControl isRequired>
-                  <FormLabel htmlFor="date_spotted">Date Spotted</FormLabel>
+                  <FormLabel
+                    htmlFor="date_spotted"
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Date Spotted
+                  </FormLabel>
                   <Input
                     type="date"
                     id="date_spotted"
                     name="date_spotted"
                     value={formData.date_spotted}
                     onChange={handleChange}
+                    bg="cream.50"
+                    borderColor="sage.200"
+                    _hover={{ borderColor: "sage.300" }}
+                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
+                    fontSize="md"
+                    height="44px"
                   />
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel htmlFor="notes">Notes</FormLabel>
+                  <FormLabel
+                    htmlFor="notes"
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Notes (Optional)
+                  </FormLabel>
                   <Textarea
                     id="notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
-                    rows={4}
+                    placeholder="Add any interesting observations about this critter"
+                    bg="cream.50"
+                    borderColor="sage.200"
+                    _hover={{ borderColor: "sage.300" }}
+                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
+                    fontSize="md"
+                    minH="120px"
+                    resize="vertical"
                   />
                 </FormControl>
 
                 <Button
                   type="submit"
-                  colorScheme="blue"
+                  colorScheme="green"
                   width="full"
+                  size="lg"
+                  fontSize="md"
+                  height="48px"
                   isLoading={isUploading}
                   loadingText="Saving..."
+                  mt={2}
+                  _hover={{ bg: "darkGreen.600" }}
+                  _active={{ bg: "darkGreen.700" }}
                 >
                   {critter ? "Update Critter" : "Add Critter"}
                 </Button>
@@ -292,14 +382,30 @@ const CritterForm: React.FC<CritterFormProps> = ({
         onClose={() => setShowLocationPicker(false)}
         size="xl"
       >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Select Location</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent borderRadius="lg" overflow="hidden">
+          <ModalHeader
+            fontFamily="'Kalam', cursive"
+            fontSize="xl"
+            color="darkGreen.800"
+            borderBottom="1px"
+            borderColor="sage.200"
+            p={0}
+            height="64px"
+          >
+            <Flex height="100%" alignItems="center" position="relative" px={8}>
+              Select Location
+              <ModalCloseButton
+                position="absolute"
+                right={8}
+                top="50%"
+                transform="translateY(-50%)"
+              />
+            </Flex>
+          </ModalHeader>
+          <ModalBody bg="white" p={8}>
             <LocationPicker
               onLocationSelect={(loc) => {
-                // Store longitude as positive value for manual selections
                 const newLocation = {
                   lat: loc.lat,
                   lng: Math.abs(loc.lng),
