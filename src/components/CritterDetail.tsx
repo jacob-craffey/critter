@@ -50,7 +50,7 @@ const CritterDetail: React.FC<CritterDetailProps> = ({
 
   const position: [number, number] = [
     parseFloat(critter.latitude),
-    parseFloat(critter.longitude),
+    -parseFloat(critter.longitude),
   ];
 
   return (

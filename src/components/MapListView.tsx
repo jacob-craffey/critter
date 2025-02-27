@@ -77,15 +77,15 @@ const MapListView: React.FC<MapListViewProps> = ({ critters }) => {
     if (selectedCritter) {
       return [
         parseFloat(selectedCritter.latitude),
-        parseFloat(selectedCritter.longitude),
+        -parseFloat(selectedCritter.longitude),
       ];
     } else if (critters.length > 0) {
       return [
         parseFloat(critters[0].latitude),
-        parseFloat(critters[0].longitude),
+        -parseFloat(critters[0].longitude),
       ];
     }
-    return [41.8781, -87.6298]; // Chicago coordinates as default
+    return [41.8781, -87.6298]; // Chicago coordinates with negative longitude
   };
 
   const handleCritterSelect = (critter: Critter) => {
@@ -246,10 +246,11 @@ const MapListView: React.FC<MapListViewProps> = ({ critters }) => {
           <MapController center={getMapCenter()} />
           {critters.map((critter) => (
             <Marker
+              riseOnHover
               key={critter.id}
               position={[
                 parseFloat(critter.latitude),
-                parseFloat(critter.longitude),
+                -parseFloat(critter.longitude),
               ]}
               icon={icon}
               eventHandlers={{

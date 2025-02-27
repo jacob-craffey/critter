@@ -31,21 +31,22 @@ const MapUpdater: React.FC<MapViewProps> = ({ lat, lng }) => {
 };
 
 const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
-  const adjustedLng = lng < 0 ? lng : -lng;
+  // Negate the longitude to correct the position
+  const correctedLng = -lng;
 
   return (
     <Box height="200px" width="100%" borderRadius="md" overflow="hidden">
       <MapContainer
-        center={[lat, adjustedLng]}
+        center={[lat, correctedLng]}
         zoom={13}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
-        <MapUpdater lat={lat} lng={adjustedLng} />
+        <MapUpdater lat={lat} lng={correctedLng} />
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[lat, adjustedLng]} icon={icon}>
+        <Marker position={[lat, correctedLng]} icon={icon}>
           <Popup>
-            Location: {lat.toFixed(6)}, {adjustedLng.toFixed(6)}
+            Location: {lat.toFixed(6)}, {lng.toFixed(6)}
           </Popup>
         </Marker>
       </MapContainer>

@@ -9,6 +9,7 @@ import {
   Spinner,
   useDisclosure,
   IconButton,
+  Text,
 } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,6 +17,7 @@ import {
   faChevronRight,
   faMap,
   faThLarge,
+  faThumbTack,
 } from "@fortawesome/free-solid-svg-icons";
 import CritterForm from "./CritterForm";
 import CritterCard from "./CritterCard";
@@ -90,24 +92,53 @@ export const CritterList: React.FC = () => {
 
   return (
     <Box>
-      <Flex justifyContent="space-between" p={4}>
-        <Flex gap={2}>
-          <IconButton
-            aria-label="Toggle view"
-            icon={
-              <FontAwesomeIcon
-                icon={viewMode === "cards" ? faMap : faThLarge}
-              />
-            }
-            onClick={() => setViewMode(viewMode === "cards" ? "map" : "cards")}
-          />
+      {critters.length > 0 && (
+        <Flex justifyContent="space-between" p={4}>
+          <Flex gap={2}>
+            <IconButton
+              aria-label="Toggle view"
+              icon={
+                <FontAwesomeIcon
+                  icon={viewMode === "cards" ? faMap : faThLarge}
+                />
+              }
+              onClick={() =>
+                setViewMode(viewMode === "cards" ? "map" : "cards")
+              }
+            />
+          </Flex>
+          <Button onClick={onOpen} colorScheme="blue">
+            Add New Critter
+          </Button>
         </Flex>
-        <Button onClick={onOpen} colorScheme="blue">
-          Add New Critter
-        </Button>
-      </Flex>
+      )}
 
-      {viewMode === "cards" ? (
+      {critters.length === 0 ? (
+        <Center flexDirection="column" h="calc(100vh - 64px)" px={4}>
+          <Box mb={8} textAlign="center" maxW="600px">
+            <Text
+              fontSize="2xl"
+              fontFamily="'Kalam', cursive"
+              color="sage.600"
+              mb={4}
+            >
+              Welcome to Critter!
+            </Text>
+            <Text fontSize="lg" color="gray.600" mb={8}>
+              Document and share your wildlife encounters. Start your collection
+              by adding your first critter sighting.
+            </Text>
+            <Button
+              onClick={onOpen}
+              colorScheme="green"
+              size="lg"
+              leftIcon={<FontAwesomeIcon icon={faThumbTack} />}
+            >
+              Add Your First Critter
+            </Button>
+          </Box>
+        </Center>
+      ) : viewMode === "cards" ? (
         <>
           <SimpleGrid
             columns={{ base: 1, md: 2, lg: 3 }}

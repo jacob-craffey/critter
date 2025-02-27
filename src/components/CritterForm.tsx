@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   FormControl,
@@ -47,6 +47,8 @@ const CritterForm: React.FC<CritterFormProps> = ({
     date_spotted: "",
     photo: "",
     notes: "",
+    latitude: "",
+    longitude: "",
   });
 
   const handleImageSelect = (file: File) => {
@@ -61,7 +63,8 @@ const CritterForm: React.FC<CritterFormProps> = ({
         date_spotted: dateSpotted,
       }));
     }
-    if (location) {
+
+    if (location && location.lat !== 0 && location.lng !== 0) {
       setLocation(location);
     } else {
       setShowLocationPicker(true);
@@ -80,6 +83,29 @@ const CritterForm: React.FC<CritterFormProps> = ({
       });
 
       setImagePreview(critter.photo);
+
+      // Set location state from existing coordinates
+      if (critter.latitude && critter.longitude) {
+        setLocation({
+          lat: parseFloat(critter.latitude),
+          lng: parseFloat(critter.longitude),
+        });
+      }
+    } else if (isOpen) {
+      // Reset form state when opening for a new critter
+      setFormData({
+        species_name: "",
+        nick_name: "",
+        date_spotted: "",
+        photo: "",
+        notes: "",
+        latitude: "",
+        longitude: "",
+      });
+      setImageFile(null);
+      setImagePreview("");
+      setLocation(null);
+      setShowLocationPicker(false);
     }
 
     // Cleanup function for image preview URL
@@ -88,7 +114,7 @@ const CritterForm: React.FC<CritterFormProps> = ({
         URL.revokeObjectURL(imagePreview);
       }
     };
-  }, [critter]);
+  }, [critter, isOpen]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -107,18 +133,38 @@ const CritterForm: React.FC<CritterFormProps> = ({
     try {
       const formDataWithImage = new FormData();
 
-      // Append all form fields except photo
+      // Append all form fields except photo and coordinates
       Object.keys(formData).forEach((key) => {
-        if (key !== "photo") {
+        if (key !== "photo" && key !== "latitude" && key !== "longitude") {
           formDataWithImage.append(key, formData[key as keyof typeof formData]);
         }
       });
 
-      // Append location data if available
+      // Handle location data
+      let finalLat: string;
+      let finalLng: string;
+
       if (location) {
-        formDataWithImage.append("latitude", location.lat.toString());
-        formDataWithImage.append("longitude", location.lng.toString());
+        finalLat = location.lat.toString();
+        finalLng = location.lng.toString();
+      } else if (!critter?.id) {
+        finalLat = "41.8781";
+        finalLng = "87.6298";
+      } else {
+        finalLat = critter.latitude;
+        finalLng = critter.longitude;
       }
+
+      // Ensure we're not sending "0" or empty coordinates
+      if (finalLat === "0" || finalLng === "0" || !finalLat || !finalLng) {
+        console.log("Coordinates were invalid, using Chicago default");
+        finalLat = "41.8781";
+        finalLng = "87.6298";
+      }
+
+      console.log("Final coordinates being sent:", finalLat, finalLng);
+      formDataWithImage.append("latitude", finalLat);
+      formDataWithImage.append("longitude", finalLng);
 
       // Append the image if one was selected
       if (imageFile) {
@@ -253,7 +299,12 @@ const CritterForm: React.FC<CritterFormProps> = ({
           <ModalBody pb={6}>
             <LocationPicker
               onLocationSelect={(loc) => {
-                setLocation(loc);
+                // Store longitude as positive value for manual selections
+                const newLocation = {
+                  lat: loc.lat,
+                  lng: Math.abs(loc.lng),
+                };
+                setLocation(newLocation);
                 setShowLocationPicker(false);
               }}
               onClose={() => setShowLocationPicker(false)}
