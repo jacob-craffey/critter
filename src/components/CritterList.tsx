@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Box,
-  Button,
   Center,
   Flex,
   SimpleGrid,
@@ -11,11 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faChevronLeft,
-  faChevronRight,
-  faThumbTack,
-} from "@fortawesome/free-solid-svg-icons";
+import { faThumbTack } from "@fortawesome/free-solid-svg-icons";
 import CritterForm from "./CritterForm";
 import CritterCard from "./CritterCard";
 import MapListView from "./MapListView";
@@ -28,10 +23,12 @@ export const CritterList: React.FC = () => {
   const [critters, setCritters] = useState<Critter[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [viewMode, setViewMode] = useState<"cards" | "map">("cards");
   const listRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const perPage = 9;
@@ -52,48 +49,79 @@ export const CritterList: React.FC = () => {
     }
   }, []);
 
-  const fetchCritters = useCallback(async () => {
-    // Cancel any ongoing requests
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create a new abort controller for this request
-    abortControllerRef.current = new AbortController();
-
-    try {
-      setLoading(true);
-      const { items, totalPages: total } = await critterService.getList(
-        page,
-        perPage
-      );
-      setCritters(items);
-      setTotalPages(total);
-    } catch (error) {
-      if (error instanceof ClientResponseError && error.isAbort) {
-        // Ignore auto-cancelled requests
-        console.log("Request was cancelled");
-        return;
+  const fetchCritters = useCallback(
+    async (pageToFetch: number, append: boolean = false) => {
+      // Cancel any ongoing requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      console.error("Error fetching critters:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, perPage]);
 
-  // Update pagination when a new critter is added without fetching all critters
-  const updatePagination = useCallback(
-    (totalItems: number) => {
-      const newTotalPages = Math.ceil(totalItems / perPage);
-      if (newTotalPages !== totalPages) {
-        setTotalPages(newTotalPages);
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
+
+      try {
+        setLoading(true);
+        const { items, totalPages } = await critterService.getList(
+          pageToFetch,
+          perPage
+        );
+
+        if (append) {
+          setCritters((prev) => [...prev, ...items]);
+        } else {
+          setCritters(items);
+        }
+
+        // Check if we've reached the end
+        setHasMore(pageToFetch < totalPages);
+      } catch (error) {
+        if (error instanceof ClientResponseError && error.isAbort) {
+          // Ignore auto-cancelled requests
+          console.log("Request was cancelled");
+          return;
+        }
+        console.error("Error fetching critters:", error);
+      } finally {
+        setLoading(false);
       }
     },
-    [perPage, totalPages]
+    [perPage]
   );
 
+  // Load more critters when scrolling
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchCritters(nextPage, true);
+    }
+  }, [loading, hasMore, page, fetchCritters]);
+
+  // Set up intersection observer for infinite scroll
   useEffect(() => {
-    fetchCritters();
+    if (loadingRef.current && viewMode === "cards") {
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            loadMore();
+          }
+        },
+        { threshold: 0.1 }
+      );
+
+      observerRef.current.observe(loadingRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadMore, viewMode]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchCritters(1, false);
 
     // Cleanup function to abort any pending requests when component unmounts
     return () => {
@@ -133,11 +161,6 @@ export const CritterList: React.FC = () => {
       if (newCritter && newCritter.id) {
         console.log("Critter created event received:", newCritter);
         handleAddOrUpdateCritter(newCritter);
-
-        // If we're not on the first page, go to the first page to see the new critter
-        if (page !== 1) {
-          setPage(1);
-        }
       }
     };
 
@@ -154,7 +177,7 @@ export const CritterList: React.FC = () => {
         handleCritterCreated as EventListener
       );
     };
-  }, [page]);
+  }, []);
 
   const handleAddOrUpdateCritter = useCallback(
     (updatedCritter: Critter) => {
@@ -169,39 +192,28 @@ export const CritterList: React.FC = () => {
           const updatedCritters = [...prevCritters];
           updatedCritters[existingCritterIndex] = updatedCritter;
           return updatedCritters;
-        } else if (page === 1) {
-          // We're on the first page, so add the new critter at the beginning
-          let newCritters = [updatedCritter, ...prevCritters];
-
-          // If we're at max capacity, remove the last item
-          if (newCritters.length > perPage) {
-            newCritters = newCritters.slice(0, perPage);
-          }
-
-          return newCritters;
         } else {
-          // We're not on the first page, don't modify the current view
-          // The user will need to navigate to page 1 to see the new critter
-          return prevCritters;
+          // Add new critter at the beginning
+          return [updatedCritter, ...prevCritters];
         }
       });
 
-      // Get the total count to update pagination
+      // Reset to page 1 and refresh the list when a new critter is added
+      if (page !== 1) {
+        setPage(1);
+        fetchCritters(1, false);
+      }
+
+      // Update hasMore based on total count
       getTotalCritterCount()
         .then((totalCount) => {
-          updatePagination(totalCount);
+          setHasMore(totalCount > critters.length);
         })
         .catch((error) => {
           console.error("Error getting total count:", error);
         });
-
-      // If we're not on the first page and this is a new critter,
-      // navigate to the first page to see it
-      if (page !== 1 && !critters.find((c) => c.id === updatedCritter.id)) {
-        setPage(1);
-      }
     },
-    [page, perPage, critters, updatePagination, getTotalCritterCount]
+    [page, critters.length, fetchCritters, getTotalCritterCount]
   );
 
   const handleDeleteCritter = useCallback(
@@ -211,22 +223,21 @@ export const CritterList: React.FC = () => {
         prevCritters.filter((critter) => critter.id !== critterId)
       );
 
-      // Get the total count to update pagination
+      // Update hasMore based on new total count
       getTotalCritterCount()
         .then((totalCount) => {
-          updatePagination(totalCount);
+          setHasMore(totalCount > critters.length - 1);
 
-          // If we deleted the last critter on a page, go back one page
-          // (except if we're already on page 1)
-          if (critters.length === 1 && page > 1) {
-            setPage((prev) => prev - 1);
+          // If we deleted the last visible critter and there are more to load, fetch more
+          if (critters.length <= 1 && totalCount > 0) {
+            fetchCritters(1, false);
           }
         })
         .catch((error) => {
           console.error("Error getting total count:", error);
         });
     },
-    [critters.length, page, updatePagination, getTotalCritterCount]
+    [critters.length, fetchCritters, getTotalCritterCount]
   );
 
   const handleFormClose = useCallback(() => {
@@ -288,28 +299,23 @@ export const CritterList: React.FC = () => {
               </SlideFade>
             ))}
           </SimpleGrid>
-          <Flex justifyContent="center" mt={6} mb={8} gap={4}>
-            <Button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              isDisabled={page === 1}
-              colorScheme="green"
-              variant="outline"
-              fontSize="md"
-              leftIcon={<FontAwesomeIcon icon={faChevronLeft} />}
-            >
-              Previous
-            </Button>
-            <Button
-              onClick={() => setPage((p) => p + 1)}
-              isDisabled={page >= totalPages}
-              colorScheme="green"
-              variant="outline"
-              fontSize="md"
-              rightIcon={<FontAwesomeIcon icon={faChevronRight} />}
-            >
-              Next
-            </Button>
-          </Flex>
+
+          {/* Infinite scroll loading indicator */}
+          {viewMode === "cards" && (
+            <Center py={6} ref={loadingRef}>
+              {loading && hasMore ? (
+                <Spinner size="md" color="green.500" />
+              ) : hasMore ? (
+                <Text color="gray.500" fontSize="sm">
+                  Scroll for more
+                </Text>
+              ) : critters.length > 0 ? (
+                <Text color="gray.500" fontSize="sm">
+                  No more critters to load
+                </Text>
+              ) : null}
+            </Center>
+          )}
         </>
       ) : (
         <MapListView critters={critters} />
