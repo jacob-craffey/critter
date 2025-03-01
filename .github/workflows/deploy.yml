@@ -24,7 +24,7 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          VITE_POCKETBASE_URL: ${{ vars.VITE_POCKETBASE_URL }}
+          VITE_POCKETBASE_URL: ${{ secrets.VITE_POCKETBASE_URL }}
 
       - name: Set up SSH
         run: |
@@ -38,9 +38,6 @@ jobs:
 
           # Create SSH config
           echo -e "Host vm\n\tHostName ${{ secrets.VM_HOST }}\n\tUser ${{ secrets.VM_USERNAME }}\n\tIdentityFile ~/.ssh/deploy_key\n\tStrictHostKeyChecking accept-new" > ~/.ssh/config
-
-      - name: Test SSH connection
-        run: ssh vm "echo Connection successful"
 
       - name: Deploy to VM
         run: rsync -avz --delete dist/ vm:${{ secrets.DEPLOY_PATH }}
