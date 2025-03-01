@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { authService } from "@/services/AuthService";
-import { Box, Button, VStack } from "@chakra-ui/react";
+import { Box, Button, VStack, Icon, Text, Flex } from "@chakra-ui/react";
+import { FaGoogle } from "react-icons/fa";
 
 export const OAuthButtons = () => {
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleOAuthLogin = async (provider: string) => {
     try {
+      setIsLoading(true);
       setError("");
       await authService.signInWithOAuth(provider);
     } catch (error) {
@@ -14,6 +17,8 @@ export const OAuthButtons = () => {
       setError(
         error instanceof Error ? error.message : "Authentication failed"
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -28,10 +33,19 @@ export const OAuthButtons = () => {
       <VStack flex={100} spacing={4}>
         <Button
           onClick={() => handleOAuthLogin("google")}
-          variant={"outline"}
-          w={"full"}
+          variant="outline"
+          w="full"
+          colorScheme="green"
+          height="48px"
+          fontSize="md"
+          isLoading={isLoading}
+          leftIcon={<Icon as={FaGoogle} color="#4285F4" boxSize={5} />}
+          justifyContent="flex-start"
+          px={4}
         >
-          Continue with Google
+          <Text flex="1" textAlign="center">
+            Continue with Google
+          </Text>
         </Button>
 
         {/* <Button

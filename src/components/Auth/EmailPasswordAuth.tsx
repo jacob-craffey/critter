@@ -119,9 +119,13 @@ export const EmailPasswordAuth: React.FC<EmailPasswordAuthProps> = ({
               </FormControl>
               <Button
                 type="submit"
-                colorScheme="blue"
+                colorScheme="green"
                 width="full"
                 isLoading={isLoading}
+                height="48px"
+                fontSize="md"
+                _hover={{ bg: "darkGreen.600" }}
+                _active={{ bg: "darkGreen.700" }}
               >
                 Sign In
               </Button>
@@ -145,9 +149,13 @@ export const EmailPasswordAuth: React.FC<EmailPasswordAuthProps> = ({
               </FormControl>
               <Button
                 type="submit"
-                colorScheme="blue"
+                colorScheme="green"
                 width="full"
                 isLoading={isLoading}
+                height="48px"
+                fontSize="md"
+                _hover={{ bg: "darkGreen.600" }}
+                _active={{ bg: "darkGreen.700" }}
               >
                 Sign Up
               </Button>

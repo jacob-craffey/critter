@@ -17,6 +17,7 @@ import {
   ModalFooter,
   Text,
   Spinner,
+  Box,
 } from "@chakra-ui/react";
 import { critterService } from "@/services/CritterService";
 import { Critter, ImageMetadata } from "@/models/types";
@@ -364,14 +365,16 @@ const CritterForm: React.FC<CritterFormProps> = ({
           <ModalHeader
             bg="sage.100"
             color="darkGreen.800"
-            fontFamily="cursive"
             height="64px"
             px={8}
             display="flex"
             alignItems="center"
+            justifyContent="space-between"
+            fontFamily="'Kalam', cursive"
+            fontSize="xl"
           >
-            {critter ? "Edit Critter" : "Add New Critter"}
-            <ModalCloseButton right={8} />
+            <Box>{critter ? "Edit Critter" : "Add New Critter"}</Box>
+            <ModalCloseButton position="static" right="auto" top="auto" />
           </ModalHeader>
           <ModalBody bg="white" p={8}>
             <form onSubmit={handleSubmit}>

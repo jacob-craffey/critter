@@ -6,7 +6,6 @@ import {
   Heading,
   Image,
   Text,
-  Button,
   Menu,
   MenuButton,
   MenuItem,
@@ -16,11 +15,11 @@ import {
   Center,
   Box,
   useColorModeValue,
+  IconButton,
 } from "@chakra-ui/react";
 import React, { useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faEllipsis,
   faPencil,
   faThumbTack,
   faTrash,
@@ -102,28 +101,27 @@ function CritterCard({ critter, onDelete, onUpdate }: CritterCardProps) {
         <CardBody p={0}>
           <Menu>
             <MenuButton
-              as={Button}
+              as={IconButton}
               position="absolute"
-              right={0}
-              top={0}
-              borderRadius="50%"
-              p={0}
+              right={2}
+              top={2}
+              size="sm"
               zIndex={2}
               bg="white"
-              _hover={{ opacity: 1 }}
-              onClick={handleMenuClick}
-            >
-              <Box
-                transform="rotate(45deg) perspective(100px) rotateX(30deg)"
-                style={{ transformOrigin: "center" }}
-              >
+              boxShadow="md"
+              borderRadius="full"
+              aria-label="Pin"
+              icon={
                 <FontAwesomeIcon
                   icon={faThumbTack}
                   style={{ color: "#E53E3E" }}
-                  size="2xl"
+                  size="lg"
+                  transform="rotate(45deg)"
                 />
-              </Box>
-            </MenuButton>
+              }
+              _hover={{ bg: "gray.100" }}
+              onClick={handleMenuClick}
+            />
             <MenuList minW="fit-content" onClick={handleMenuClick}>
               <MenuItem
                 onClick={(e) => {
