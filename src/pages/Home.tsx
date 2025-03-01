@@ -7,9 +7,19 @@ const Home = () => {
   const bgColor = useColorModeValue("cream.50", "darkGreen.900");
 
   return (
-    <Box w="100%" h="100vh" bg={bgColor}>
+    <Box
+      w="100%"
+      minH="100vh"
+      bg={bgColor}
+      display="flex"
+      flexDirection="column"
+      position="relative"
+      overflow="hidden"
+    >
       <NavBar />
-      <CritterList />
+      <Box flex="1" position="relative">
+        <CritterList />
+      </Box>
     </Box>
   );
 };

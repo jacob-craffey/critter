@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Flex,
@@ -8,13 +8,32 @@ import {
   MenuList,
   MenuItem,
   useColorModeValue,
+  IconButton,
+  HStack,
+  Tooltip,
 } from "@chakra-ui/react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMap, faThLarge } from "@fortawesome/free-solid-svg-icons";
 import { pb } from "@/services/pocketbase";
+
+// Create a custom event for view mode changes
+export const setViewModeEvent = (viewMode: "cards" | "map") => {
+  const event = new CustomEvent("viewModeChanged", {
+    detail: viewMode,
+  });
+  document.dispatchEvent(event);
+};
 
 const NavBar: React.FC = () => {
   const user = pb.authStore.record;
   const bgColor = useColorModeValue("sage.300", "darkGreen.800");
   const textColor = useColorModeValue("darkGreen.800", "cream.50");
+  const [viewMode, setViewMode] = useState<"cards" | "map">("cards");
+
+  const handleViewModeChange = (mode: "cards" | "map") => {
+    setViewMode(mode);
+    setViewModeEvent(mode);
+  };
 
   return (
     <Box bg={bgColor} py={3} px={6} boxShadow="lg">
@@ -27,7 +46,47 @@ const NavBar: React.FC = () => {
         >
           Critter
         </Box>
-        <Flex alignItems="center">
+        <Flex alignItems="center" gap={4}>
+          <HStack
+            spacing={0}
+            bg="white"
+            borderRadius="full"
+            overflow="hidden"
+            boxShadow="sm"
+            border="1px"
+            borderColor="sage.200"
+          >
+            <Tooltip label="Card View" placement="bottom">
+              <IconButton
+                aria-label="Card view"
+                icon={<FontAwesomeIcon icon={faThLarge} />}
+                onClick={() => handleViewModeChange("cards")}
+                variant="ghost"
+                colorScheme="green"
+                size="md"
+                borderRadius="full"
+                bg={viewMode === "cards" ? "green.100" : "transparent"}
+                color={viewMode === "cards" ? "green.700" : "gray.500"}
+                _hover={{ bg: viewMode === "cards" ? "green.100" : "gray.100" }}
+                borderRight="1px"
+                borderColor="sage.200"
+              />
+            </Tooltip>
+            <Tooltip label="Map View" placement="bottom">
+              <IconButton
+                aria-label="Map view"
+                icon={<FontAwesomeIcon icon={faMap} />}
+                onClick={() => handleViewModeChange("map")}
+                variant="ghost"
+                colorScheme="green"
+                size="md"
+                borderRadius="full"
+                bg={viewMode === "map" ? "green.100" : "transparent"}
+                color={viewMode === "map" ? "green.700" : "gray.500"}
+                _hover={{ bg: viewMode === "map" ? "green.100" : "gray.100" }}
+              />
+            </Tooltip>
+          </HStack>
           <Menu>
             <MenuButton>
               <Avatar

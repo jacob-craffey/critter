@@ -14,17 +14,25 @@ import {
   ModalCloseButton,
   ModalBody,
   Flex,
+  ModalFooter,
+  Text,
+  Spinner,
 } from "@chakra-ui/react";
 import { critterService } from "@/services/CritterService";
-import { Critter } from "@/models/types";
+import { Critter, ImageMetadata } from "@/models/types";
 import { ImageDropzone } from "./ImageDropZone";
 import { LocationPicker } from "./LocationPicker";
+import { imageClassificationService } from "@/services/ImageClassificationService";
+import { FaMapMarkerAlt } from "react-icons/fa";
+import { Icon } from "@chakra-ui/react";
+import ExifReader from "exifreader";
 
 interface CritterFormProps {
   critter?: Critter;
   isOpen: boolean;
   onClose: () => void;
   onSave: (critter: Critter) => void;
+  initialFile?: File;
 }
 
 const CritterForm: React.FC<CritterFormProps> = ({
@@ -32,6 +40,7 @@ const CritterForm: React.FC<CritterFormProps> = ({
   isOpen,
   onClose,
   onSave,
+  initialFile,
 }) => {
   const toast = useToast();
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -41,6 +50,15 @@ const CritterForm: React.FC<CritterFormProps> = ({
     null
   );
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [species, setSpecies] = useState("");
+  const [notes, setNotes] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageMetadata, setImageMetadata] = useState<ImageMetadata | null>(
+    null
+  );
+  const [preview, setPreview] = useState<string>("");
+  const [isProcessingMetadata, setIsProcessingMetadata] = useState(false);
+  const [isClassifying, setIsClassifying] = useState(false);
 
   const [formData, setFormData] = useState<Omit<Critter, "user_id">>({
     species_name: "",
@@ -52,9 +70,87 @@ const CritterForm: React.FC<CritterFormProps> = ({
     longitude: "",
   });
 
-  const handleImageSelect = (file: File) => {
+  const handleImageSelect = async (file: File) => {
     setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    setPreview(URL.createObjectURL(file));
+
+    // Start metadata processing
+    setIsProcessingMetadata(true);
+    try {
+      const metadata = await extractImageMetadata(file);
+      handleMetadataExtracted(metadata);
+    } finally {
+      setIsProcessingMetadata(false);
+    }
+
+    // Start species classification
+    setIsClassifying(true);
+    try {
+      const species = await imageClassificationService.classifyImage(file);
+      if (species) {
+        handleSpeciesDetected(species);
+      }
+    } finally {
+      setIsClassifying(false);
+    }
+  };
+
+  const extractImageMetadata = async (file: File): Promise<ImageMetadata> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const tags = ExifReader.load(arrayBuffer);
+
+      let dateSpotted = "";
+      let location = null;
+
+      if (tags?.DateTimeOriginal?.description) {
+        const dateString = tags.DateTimeOriginal.description;
+        const [datePart] = dateString.split(" ");
+        const [year, month, day] = datePart.split(":");
+        dateSpotted = `${year}-${month}-${day}`;
+      }
+
+      // Extract GPS coordinates if available
+      if (tags?.GPSLatitude?.value && tags?.GPSLongitude?.value) {
+        const convertDMSToDD = (dmsArr: any[], ref: string) => {
+          try {
+            const degrees = dmsArr[0][0] / dmsArr[0][1];
+            const minutes = dmsArr[1][0] / dmsArr[1][1];
+            const seconds = dmsArr[2][0] / dmsArr[2][1];
+
+            let dd = degrees + minutes / 60 + seconds / 3600;
+            if (ref === "S" || ref === "W") dd *= -1;
+            return Number(dd.toFixed(6));
+          } catch (error) {
+            console.warn("Error converting DMS to DD:", error);
+            return 0;
+          }
+        };
+
+        const lat = tags.GPSLatitude?.description
+          ? Number(tags.GPSLatitude.description)
+          : convertDMSToDD(
+              tags.GPSLatitude.value as any[],
+              tags.GPSLatitudeRef.value[0]
+            );
+
+        const lng = tags.GPSLongitude?.description
+          ? Number(tags.GPSLongitude.description)
+          : convertDMSToDD(
+              tags.GPSLongitude.value as any[],
+              tags.GPSLongitudeRef.value[0]
+            );
+
+        if (lat && lng) {
+          location = { lat, lng };
+        }
+      }
+
+      return { dateSpotted, location };
+    } catch (error) {
+      console.warn("Error extracting image metadata:", error);
+      return { dateSpotted: "", location: null };
+    }
   };
 
   const handleMetadataExtracted = ({ dateSpotted, location }) => {
@@ -67,10 +163,23 @@ const CritterForm: React.FC<CritterFormProps> = ({
 
     if (location && location.lat !== 0 && location.lng !== 0) {
       setLocation(location);
-    } else {
-      setShowLocationPicker(true);
     }
   };
+
+  const handleSpeciesDetected = (detectedSpecies: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      species_name: detectedSpecies,
+    }));
+    setSpecies(detectedSpecies);
+  };
+
+  useEffect(() => {
+    // Process initialFile if provided
+    if (initialFile && isOpen) {
+      handleImageSelect(initialFile);
+    }
+  }, [initialFile, isOpen]);
 
   useEffect(() => {
     if (critter) {
@@ -83,7 +192,9 @@ const CritterForm: React.FC<CritterFormProps> = ({
         date_spotted: formattedDate,
       });
 
-      setImagePreview(critter.photo);
+      setPreview(critter.photo);
+      setSpecies(critter.species_name);
+      setNotes(critter.notes);
 
       // Set location state from existing coordinates
       if (critter.latitude && critter.longitude) {
@@ -92,8 +203,8 @@ const CritterForm: React.FC<CritterFormProps> = ({
           lng: parseFloat(critter.longitude),
         });
       }
-    } else if (isOpen) {
-      // Reset form state when opening for a new critter
+    } else if (isOpen && !initialFile) {
+      // Reset form state when opening for a new critter (but not when initialFile is provided)
       setFormData({
         species_name: "",
         nick_name: "",
@@ -104,18 +215,20 @@ const CritterForm: React.FC<CritterFormProps> = ({
         longitude: "",
       });
       setImageFile(null);
-      setImagePreview("");
+      setPreview("");
       setLocation(null);
       setShowLocationPicker(false);
+      setSpecies("");
+      setNotes("");
     }
 
     // Cleanup function for image preview URL
     return () => {
-      if (imagePreview && !critter?.photo) {
-        URL.revokeObjectURL(imagePreview);
+      if (preview && !critter?.photo) {
+        URL.revokeObjectURL(preview);
       }
     };
-  }, [critter, isOpen]);
+  }, [critter, isOpen, initialFile]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -125,6 +238,16 @@ const CritterForm: React.FC<CritterFormProps> = ({
       ...prev,
       [name]: value,
     }));
+
+    // Keep species state in sync with form data
+    if (name === "species_name") {
+      setSpecies(value);
+    }
+
+    // Keep notes state in sync with form data
+    if (name === "notes") {
+      setNotes(value);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,10 +257,20 @@ const CritterForm: React.FC<CritterFormProps> = ({
     try {
       const formDataWithImage = new FormData();
 
+      // Update form data with species and notes
+      const updatedFormData = {
+        ...formData,
+        species_name: species,
+        notes: notes,
+      };
+
       // Append all form fields except photo and coordinates
-      Object.keys(formData).forEach((key) => {
+      Object.keys(updatedFormData).forEach((key) => {
         if (key !== "photo" && key !== "latitude" && key !== "longitude") {
-          formDataWithImage.append(key, formData[key as keyof typeof formData]);
+          formDataWithImage.append(
+            key,
+            updatedFormData[key as keyof typeof updatedFormData]
+          );
         }
       });
 
@@ -178,8 +311,10 @@ const CritterForm: React.FC<CritterFormProps> = ({
           critter.id,
           formDataWithImage
         );
+        console.log("Updated critter:", savedCritter);
       } else {
         savedCritter = await critterService.create(formDataWithImage);
+        console.log("Created new critter:", savedCritter);
       }
 
       toast({
@@ -192,7 +327,19 @@ const CritterForm: React.FC<CritterFormProps> = ({
         isClosable: true,
       });
 
-      onSave(savedCritter);
+      // Ensure we're passing the saved critter to the onSave callback
+      if (savedCritter) {
+        // Create a custom event for the GlobalImageDropZone
+        if (!critter?.id) {
+          const event = new CustomEvent("critterCreated", {
+            detail: savedCritter,
+            bubbles: true,
+          });
+          document.dispatchEvent(event);
+        }
+
+        onSave(savedCritter);
+      }
       onClose();
     } catch (error) {
       console.error("Error saving critter:", error);
@@ -215,35 +362,53 @@ const CritterForm: React.FC<CritterFormProps> = ({
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent borderRadius="lg" overflow="hidden">
           <ModalHeader
-            fontFamily="'Kalam', cursive"
-            fontSize="xl"
+            bg="sage.100"
             color="darkGreen.800"
-            borderBottom="1px"
-            borderColor="sage.200"
-            p={4}
+            fontFamily="cursive"
             height="64px"
+            px={8}
+            display="flex"
+            alignItems="center"
           >
-            <Flex
-              height="100%"
-              alignItems="center"
-              position="relative"
-              px={8}
-              mt={"3px"}
-            >
-              <span style={{ marginTop: "3px" }}>
-                {critter ? "Edit Critter" : "Add New Critter"}
-              </span>
-              <ModalCloseButton
-                position="absolute"
-                right={8}
-                top="50%"
-                transform="translateY(-50%)"
-              />
-            </Flex>
+            {critter ? "Edit Critter" : "Add New Critter"}
+            <ModalCloseButton right={8} />
           </ModalHeader>
           <ModalBody bg="white" p={8}>
             <form onSubmit={handleSubmit}>
               <VStack spacing={6} align="stretch">
+                <FormControl isRequired>
+                  <FormLabel
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Photo
+                  </FormLabel>
+                  <ImageDropzone
+                    onImageSelect={handleImageSelect}
+                    onMetadataExtracted={handleMetadataExtracted}
+                    onSpeciesDetected={handleSpeciesDetected}
+                    preview={preview}
+                  />
+                </FormControl>
+
+                {(isProcessingMetadata || isClassifying) && (
+                  <VStack spacing={4} py={2}>
+                    {isProcessingMetadata && (
+                      <Flex align="center" color="darkGreen.800">
+                        <Spinner size="sm" mr={2} color="green.500" />
+                        <Text fontSize="sm">Extracting image metadata...</Text>
+                      </Flex>
+                    )}
+                    {isClassifying && (
+                      <Flex align="center" color="darkGreen.800">
+                        <Spinner size="sm" mr={2} color="green.500" />
+                        <Text fontSize="sm">Identifying species...</Text>
+                      </Flex>
+                    )}
+                  </VStack>
+                )}
+
                 <FormControl isRequired>
                   <FormLabel
                     htmlFor="species_name"
@@ -256,15 +421,17 @@ const CritterForm: React.FC<CritterFormProps> = ({
                   <Input
                     id="species_name"
                     name="species_name"
-                    value={formData.species_name}
-                    onChange={handleChange}
+                    value={species}
+                    onChange={(e) => setSpecies(e.target.value)}
+                    placeholder="Enter species name"
                     bg="cream.50"
                     borderColor="sage.200"
                     _hover={{ borderColor: "sage.300" }}
-                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
-                    placeholder="Enter the species name"
-                    fontSize="md"
-                    height="44px"
+                    _focus={{
+                      borderColor: "green.500",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-green-500)",
+                    }}
+                    isDisabled={isClassifying}
                   />
                 </FormControl>
 
@@ -280,30 +447,16 @@ const CritterForm: React.FC<CritterFormProps> = ({
                   <Input
                     id="nick_name"
                     name="nick_name"
-                    value={formData.nick_name || ""}
+                    value={formData.nick_name}
                     onChange={handleChange}
                     placeholder="Give your critter a friendly nickname"
                     bg="cream.50"
                     borderColor="sage.200"
                     _hover={{ borderColor: "sage.300" }}
-                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
-                    fontSize="md"
-                    height="44px"
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel
-                    color="darkGreen.800"
-                    fontWeight="600"
-                    fontSize="md"
-                  >
-                    Photo
-                  </FormLabel>
-                  <ImageDropzone
-                    onImageSelect={handleImageSelect}
-                    onMetadataExtracted={handleMetadataExtracted}
-                    preview={imagePreview}
+                    _focus={{
+                      borderColor: "green.500",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-green-500)",
+                    }}
                   />
                 </FormControl>
 
@@ -325,10 +478,33 @@ const CritterForm: React.FC<CritterFormProps> = ({
                     bg="cream.50"
                     borderColor="sage.200"
                     _hover={{ borderColor: "sage.300" }}
-                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
-                    fontSize="md"
-                    height="44px"
+                    _focus={{
+                      borderColor: "green.500",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-green-500)",
+                    }}
+                    isDisabled={isProcessingMetadata}
                   />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel
+                    color="darkGreen.800"
+                    fontWeight="600"
+                    fontSize="md"
+                  >
+                    Location
+                  </FormLabel>
+                  <Button
+                    onClick={() => setShowLocationPicker(true)}
+                    width="full"
+                    variant="outline"
+                    colorScheme="green"
+                    leftIcon={<Icon as={FaMapMarkerAlt} />}
+                    bg="cream.50"
+                    _hover={{ bg: "sage.50" }}
+                  >
+                    {location ? "Change Location" : "Set Location"}
+                  </Button>
                 </FormControl>
 
                 <FormControl>
@@ -343,14 +519,16 @@ const CritterForm: React.FC<CritterFormProps> = ({
                   <Textarea
                     id="notes"
                     name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add any interesting observations about this critter"
                     bg="cream.50"
                     borderColor="sage.200"
                     _hover={{ borderColor: "sage.300" }}
-                    _focus={{ borderColor: "darkGreen.500", boxShadow: "none" }}
-                    fontSize="md"
+                    _focus={{
+                      borderColor: "green.500",
+                      boxShadow: "0 0 0 1px var(--chakra-colors-green-500)",
+                    }}
                     minH="120px"
                     resize="vertical"
                   />
@@ -363,8 +541,16 @@ const CritterForm: React.FC<CritterFormProps> = ({
                   size="lg"
                   fontSize="md"
                   height="48px"
-                  isLoading={isUploading}
-                  loadingText="Saving..."
+                  isLoading={
+                    isUploading || isProcessingMetadata || isClassifying
+                  }
+                  loadingText={
+                    isProcessingMetadata
+                      ? "Processing metadata..."
+                      : isClassifying
+                      ? "Identifying species..."
+                      : "Saving..."
+                  }
                   mt={2}
                   _hover={{ bg: "darkGreen.600" }}
                   _active={{ bg: "darkGreen.700" }}

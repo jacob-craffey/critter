@@ -1,26 +1,30 @@
 import React, { useState } from "react";
-import { Box, Center, Image, Text, VStack } from "@chakra-ui/react";
+import { Box, Center, Image, Text, VStack, Spinner } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import ExifReader from "exifreader";
 import MapView from "./MapView";
 import { pb } from "@/services/pocketbase";
 import { ImageMetadata } from "@/models/types";
+import { imageClassificationService } from "@/services/ImageClassificationService";
 
 interface ImageDropzoneProps {
   onImageSelect: (file: File) => void;
   onMetadataExtracted: (metadata: ImageMetadata) => void;
+  onSpeciesDetected?: (species: string) => void;
   preview?: string;
 }
 
 export const ImageDropzone: React.FC<ImageDropzoneProps> = ({
   onImageSelect,
   onMetadataExtracted,
+  onSpeciesDetected,
   preview,
 }) => {
   const [currentLocation, setCurrentLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
+  const [isClassifying, setIsClassifying] = useState(false);
 
   // Add function to handle preview URL
   const getPreviewUrl = (previewPath: string) => {
@@ -103,6 +107,19 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({
       onImageSelect(file);
       const metadata = await extractImageMetadata(file);
       onMetadataExtracted(metadata);
+
+      // Classify the image
+      setIsClassifying(true);
+      try {
+        const species = await imageClassificationService.classifyImage(file);
+        if (species && onSpeciesDetected) {
+          onSpeciesDetected(species);
+        }
+      } catch (error) {
+        console.error("Error classifying image:", error);
+      } finally {
+        setIsClassifying(false);
+      }
     }
   };
 
@@ -127,6 +144,7 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({
         bg={isDragActive ? "gray.50" : "white"}
         _hover={{ bg: "gray.50" }}
         width="100%"
+        position="relative"
       >
         <input {...getInputProps()} />
         {preview ? (
@@ -137,6 +155,27 @@ export const ImageDropzone: React.FC<ImageDropzoneProps> = ({
               maxH="200px"
               objectFit="contain"
             />
+            {isClassifying && (
+              <Box
+                position="absolute"
+                top="0"
+                left="0"
+                right="0"
+                bottom="0"
+                bg="blackAlpha.50"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                borderRadius="md"
+              >
+                <VStack>
+                  <Spinner size="md" color="green.500" />
+                  <Text fontSize="sm" color="darkGreen.800">
+                    Identifying species...
+                  </Text>
+                </VStack>
+              </Box>
+            )}
           </Center>
         ) : (
           <Center>

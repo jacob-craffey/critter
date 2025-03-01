@@ -25,6 +25,9 @@ jobs:
         run: npm run build
         env:
           VITE_POCKETBASE_URL: ${{ secrets.VITE_POCKETBASE_URL }}
+          VITE_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          VITE_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          VITE_AWS_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Set up SSH
         run: |

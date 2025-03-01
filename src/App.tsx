@@ -3,6 +3,7 @@ import SignIn from "./pages/SignIn";
 import Home from "./pages/Home";
 import { authService } from "@/services/AuthService";
 import { useEffect, useState } from "react";
+import GlobalImageDropZone from "./components/GlobalImageDropZone";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -15,7 +16,17 @@ function App() {
     });
   }, []);
 
-  return <Box>{isAuthenticated ? <Home /> : <SignIn />}</Box>;
+  return (
+    <Box>
+      {isAuthenticated ? (
+        <GlobalImageDropZone>
+          <Home />
+        </GlobalImageDropZone>
+      ) : (
+        <SignIn />
+      )}
+    </Box>
+  );
 }
 
 export default App;
