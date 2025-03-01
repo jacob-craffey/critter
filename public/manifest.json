@@ -1,0 +1,21 @@
+{
+  "name": "Critter - Wildlife Tracking App",
+  "short_name": "Critter",
+  "description": "Track and share your wildlife encounters with this easy-to-use app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4A5568",
+  "icons": [
+    {
+      "src": "/koala.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    }
+  ]
+}

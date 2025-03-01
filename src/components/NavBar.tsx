@@ -11,6 +11,7 @@ import {
   IconButton,
   HStack,
   Tooltip,
+  Image,
 } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMap, faThLarge } from "@fortawesome/free-solid-svg-icons";
@@ -38,14 +39,17 @@ const NavBar: React.FC = () => {
   return (
     <Box bg={bgColor} py={3} px={6} boxShadow="lg">
       <Flex h={12} alignItems="center" justifyContent="space-between">
-        <Box
-          fontFamily="'Kalam', cursive"
-          fontSize="2xl"
-          fontWeight="bold"
-          color={textColor}
-        >
-          Critter
-        </Box>
+        <Flex alignItems="center">
+          <Image src="/koala.png" alt="Critter Logo" boxSize="32px" mr={2} />
+          <Box
+            fontFamily="'Kalam', cursive"
+            fontSize="2xl"
+            fontWeight="bold"
+            color={textColor}
+          >
+            Critter
+          </Box>
+        </Flex>
         <Flex alignItems="center" gap={4}>
           <HStack
             spacing={0}
